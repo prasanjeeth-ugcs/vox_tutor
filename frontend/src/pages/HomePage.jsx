@@ -67,7 +67,7 @@ export default function HomePage() {
   if (user) return <Navigate to="/dashboard" replace />;
 
   return (
-    <main className="min-h-screen bg-white overflow-hidden">
+    <main className="min-h-screen bg-surface overflow-hidden transition-colors duration-300">
 
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-lg border-b border-surface-200">
@@ -135,7 +135,7 @@ export default function HomePage() {
               {/* Glow behind card */}
               <div className="absolute inset-0 bg-gradient-to-b from-brand-200/40 to-purple-200/30 rounded-3xl blur-2xl scale-105" />
 
-              <div className="relative bg-white rounded-3xl border border-surface-200 shadow-xl p-8">
+              <div className="relative bg-surface rounded-3xl border border-surface-200 shadow-xl p-8">
                 {/* Mic icon */}
                 <div className="w-14 h-14 rounded-2xl bg-brand-50 border border-brand-100 flex items-center justify-center mx-auto mb-5">
                   <Mic size={24} className="text-brand-600" />
@@ -155,17 +155,17 @@ export default function HomePage() {
                 <p className="text-sm text-ink-muted">Live AI interview in progress...</p>
 
                 {/* Floating chips */}
-                <div className="absolute -left-3 top-6 sm:-left-12 sm:top-10 bg-white rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '0.6s' }}>
+                <div className="absolute -left-3 top-6 sm:-left-12 sm:top-10 bg-surface rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '0.6s' }}>
                   <Brain size={13} className="text-purple-500" />
                   Gemini AI
                 </div>
 
-                <div className="absolute -right-3 top-14 sm:-right-14 sm:top-20 bg-white rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '0.8s' }}>
+                <div className="absolute -right-3 top-14 sm:-right-14 sm:top-20 bg-surface rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '0.8s' }}>
                   <MessageSquare size={13} className="text-emerald-500" />
                   Real-time voice
                 </div>
 
-                <div className="absolute -right-2 bottom-6 sm:-right-10 sm:bottom-10 bg-white rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '1s' }}>
+                <div className="absolute -right-2 bottom-6 sm:-right-10 sm:bottom-10 bg-surface rounded-xl border border-surface-200 shadow-lg px-3 py-2 flex items-center gap-2 text-xs font-medium text-ink-secondary animate-fade-up" style={{ animationDelay: '1s' }}>
                   <BarChart2 size={13} className="text-brand-500" />
                   Instant feedback
                 </div>
@@ -229,7 +229,7 @@ export default function HomePage() {
               },
             ].map(({ step, icon: Icon, color, title, desc }, i) => (
               <Reveal key={step} delay={i * 120}>
-                <div className="relative p-6 rounded-2xl border border-surface-200 bg-white hover:shadow-lg hover:border-brand-200 transition-all duration-300 group h-full">
+                <div className="relative p-6 rounded-2xl border border-surface-200 bg-surface hover:shadow-lg hover:border-brand-200 transition-all duration-300 group h-full">
                   {/* Step number */}
                   <span className="text-xs font-bold text-ink-faint mb-4 block tracking-widest">{step}</span>
 
@@ -352,7 +352,7 @@ export default function HomePage() {
           <Reveal>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Ready to ace your next interview?</h2>
             <p className="text-brand-200 mb-10 text-lg">No credit card. No setup. Just open your browser and start practicing.</p>
-            <Link to="/sign-up" className="group inline-flex items-center gap-2 bg-white text-brand-700 font-semibold px-10 py-4 rounded-2xl hover:bg-brand-50 transition-all text-base shadow-xl hover:scale-[1.02]">
+            <Link to="/sign-up" className="group inline-flex items-center gap-2 bg-surface text-brand-700 font-semibold px-10 py-4 rounded-2xl hover:bg-surface-50 transition-all text-base shadow-xl hover:scale-[1.02]">
               Create free account
               <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
             </Link>

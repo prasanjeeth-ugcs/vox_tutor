@@ -16,7 +16,7 @@ export default function Navbar() {
   if (!user) return null;
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-50 h-16 bg-white border-b border-surface-200">
+    <nav className="fixed top-0 inset-x-0 z-50 h-16 bg-surface border-b border-surface-200 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Brand */}
         <Link to="/dashboard" className="font-semibold text-lg tracking-tight text-ink">

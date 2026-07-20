@@ -4,7 +4,7 @@ import ThemeToggle from '../components/ui/ThemeToggle';
 export default function AuthLayout() {
   return (
     <div className="min-h-screen bg-surface-50 flex flex-col">
-      <nav className="h-16 flex items-center justify-between px-8 border-b border-surface-200 bg-white">
+      <nav className="h-16 flex items-center justify-between px-8 border-b border-surface-200 bg-surface transition-colors duration-300">
         <Link to="/" className="font-semibold text-lg tracking-tight text-ink">
           Vox<span className="text-brand-600">Tutor</span>
         </Link>

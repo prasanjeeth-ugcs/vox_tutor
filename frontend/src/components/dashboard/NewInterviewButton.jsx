@@ -71,7 +71,7 @@ export default function NewInterviewButton({ userId }) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-up">
+          <div className="bg-surface rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-up border border-surface-200">
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-surface-100">
@@ -104,7 +104,7 @@ export default function NewInterviewButton({ userId }) {
                         className={`p-4 rounded-2xl border-2 text-left transition-all hover:border-brand-300 ${
                           domainId === d.id
                             ? 'border-brand-500 bg-brand-50'
-                            : 'border-surface-200 bg-white'
+                            : 'border-surface-200 bg-surface'
                         }`}
                       >
                         <div className="text-2xl mb-2">{d.icon}</div>
