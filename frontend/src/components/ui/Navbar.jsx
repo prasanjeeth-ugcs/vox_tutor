@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { LayoutDashboard, LogOut } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   const { pathname } = useLocation();
@@ -39,6 +40,8 @@ export default function Navbar() {
 
         {/* User */}
         <div className="flex items-center gap-3">
+          <ThemeToggle />
+          
           <div className="hidden sm:flex items-center gap-2">
             {user.photoURL ? (
               <img

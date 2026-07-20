@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Mic, BarChart2, Clock, Zap, ArrowRight, Shield, Sparkles, Brain, MessageSquare, TrendingUp } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import ThemeToggle from '../components/ui/ThemeToggle';
 
 /* ───────── Animated Counter (triggers on scroll-into-view) ───────── */
 function AnimatedCounter({ target, suffix = '', duration = 2000 }) {
@@ -75,6 +76,7 @@ export default function HomePage() {
             Vox<span className="text-brand-600">Tutor</span>
           </span>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link to="/sign-in" className="btn-ghost">Sign in</Link>
             <Link to="/sign-up" className="btn-primary">Get started</Link>
           </div>
