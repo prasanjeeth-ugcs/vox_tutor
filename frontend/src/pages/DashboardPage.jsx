@@ -7,23 +7,35 @@ import InterviewCard from '../components/dashboard/InterviewCard';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+
+  // State for the list of interviews and their feedback
   const [interviews, setInterviews] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetch interviews and feedback when the page loads
   useEffect(() => {
-    Promise.all([
-      apiGet('/interviews'),
-      apiGet('/feedback/user'),
-    ])
-      .then(([intData, fbData]) => {
-        setInterviews(intData.interviews || []);
-        setFeedbacks(fbData.feedbacks || []);
-      })
-      .catch(err => console.error('Dashboard fetch error:', err))
-      .finally(() => setLoading(false));
+    loadDashboardData();
   }, []);
 
+  async function loadDashboardData() {
+    try {
+      // Fetch both at the same time to save loading time
+      const [interviewData, feedbackData] = await Promise.all([
+        apiGet('/interviews'),
+        apiGet('/feedback/user'),
+      ]);
+
+      setInterviews(interviewData.interviews || []);
+      setFeedbacks(feedbackData.feedbacks || []);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Show a loading state while data is being fetched
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto px-6 py-20 text-center">
@@ -32,15 +44,37 @@ export default function DashboardPage() {
     );
   }
 
-  const completed  = interviews.filter(i => i.status === 'completed').length;
-  const avgScore   = feedbacks.length
-    ? Math.round(feedbacks.reduce((s, f) => s + f.overallScore, 0) / feedbacks.length)
+  // ─── Calculate stats from the loaded data ─────────────────────────
+
+  // Count interviews that are fully done
+  const completedCount = interviews.filter(i => i.status === 'completed').length;
+
+  // Calculate the average score across all feedbacks
+  const averageScore = feedbacks.length > 0
+    ? Math.round(feedbacks.reduce((sum, f) => sum + f.overallScore, 0) / feedbacks.length)
     : null;
-  const feedbackMap = Object.fromEntries(feedbacks.map(f => [f.interviewId, f]));
+
+  // Count how many unique domains the user has practiced
+  const uniqueDomains = new Set(interviews.map(i => i.domain)).size;
+
+  // Build a quick lookup: { interviewId -> feedback } for easy access in cards
+  const feedbackByInterviewId = {};
+  for (const feedback of feedbacks) {
+    feedbackByInterviewId[feedback.interviewId] = feedback;
+  }
+
+  // ─── Stats cards data ──────────────────────────────────────────────
+  const stats = [
+    { label: 'Total sessions',    value: interviews.length,                     icon: Mic        },
+    { label: 'Completed',         value: completedCount,                         icon: CheckCircle },
+    { label: 'Avg score',         value: averageScore ? `${averageScore}/100` : '—', icon: BarChart2  },
+    { label: 'Domains practiced', value: uniqueDomains,                          icon: Clock       },
+  ];
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-10">
-      {/* Header */}
+
+      {/* ─── Page header ─── */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-ink">
@@ -49,20 +83,15 @@ export default function DashboardPage() {
           <p className="text-ink-secondary text-sm mt-1">
             {interviews.length === 0
               ? 'Start your first mock interview below.'
-              : `You've completed ${completed} interview${completed !== 1 ? 's' : ''}.`}
+              : `You've completed ${completedCount} interview${completedCount !== 1 ? 's' : ''}.`}
           </p>
         </div>
         <NewInterviewButton userId={user.uid} />
       </div>
 
-      {/* Stats */}
+      {/* ─── Stats row ─── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        {[
-          { label: 'Total sessions', value: interviews.length, icon: Mic },
-          { label: 'Completed', value: completed, icon: CheckCircle },
-          { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: BarChart2 },
-          { label: 'Domains practiced', value: new Set(interviews.map(i => i.domain)).size, icon: Clock },
-        ].map(({ label, value, icon: Icon }) => (
+        {stats.map(({ label, value, icon: Icon }) => (
           <div key={label} className="card p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-ink-muted font-medium uppercase tracking-wide">{label}</p>
@@ -73,11 +102,12 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Interviews list */}
+      {/* ─── Interviews list ─── */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-semibold text-ink">Your interviews</h2>
       </div>
 
+      {/* Show an empty state when no interviews exist yet */}
       {interviews.length === 0 ? (
         <div className="card p-16 text-center">
           <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-4">
@@ -90,12 +120,13 @@ export default function DashboardPage() {
           <NewInterviewButton userId={user.uid} />
         </div>
       ) : (
+        // Show a grid of interview cards
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {interviews.map(interview => (
             <InterviewCard
               key={interview.id}
               interview={interview}
-              feedback={feedbackMap[interview.id]}
+              feedback={feedbackByInterviewId[interview.id]}
             />
           ))}
         </div>
