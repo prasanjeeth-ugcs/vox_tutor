@@ -207,7 +207,7 @@ Strict rules:
     <div className="h-screen flex flex-col bg-surface-50 overflow-hidden">
 
       {/* Top bar */}
-      <div className="h-14 bg-white border-b border-surface-200 flex items-center justify-between px-6 flex-shrink-0">
+      <div className="h-14 bg-surface border-b border-surface-200 flex items-center justify-between px-6 flex-shrink-0 transition-colors duration-300">
         <div className="flex items-center gap-3">
           <span className="text-xl">{domain?.icon}</span>
           <div>
@@ -251,7 +251,7 @@ Strict rules:
       <div className="flex flex-1 overflow-hidden">
 
         {/* Left panel — avatar + controls */}
-        <div className="w-72 flex-shrink-0 border-r border-surface-200 bg-white flex flex-col items-center justify-center p-8 gap-6">
+        <div className="w-72 flex-shrink-0 border-r border-surface-200 bg-surface flex flex-col items-center justify-center p-8 gap-6 transition-colors duration-300">
 
           {/* AI Avatar */}
           <div className="relative">
@@ -332,7 +332,7 @@ Strict rules:
 
         {/* Right panel — live transcript */}
         <div className="flex-1 flex flex-col min-w-0">
-          <div className="h-12 flex items-center justify-between px-6 border-b border-surface-100 bg-white flex-shrink-0">
+          <div className="h-12 flex items-center justify-between px-6 border-b border-surface-100 bg-surface flex-shrink-0 transition-colors duration-300">
             <p className="text-sm font-medium text-ink">Live Transcript</p>
             <p className="text-xs text-ink-muted">Saved automatically</p>
           </div>
@@ -364,7 +364,7 @@ Strict rules:
                   </div>
                   <div className={`max-w-lg px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                     entry.role === 'interviewer'
-                      ? 'bg-white border border-surface-200 text-ink rounded-tl-sm'
+                      ? 'bg-surface border border-surface-200 text-ink rounded-tl-sm'
                       : 'bg-brand-600 text-white rounded-tr-sm'
                   }`}>
                     {entry.content}
