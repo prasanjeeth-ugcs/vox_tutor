@@ -134,3 +134,43 @@ body {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+/* ─────────────────────────────────────────────────────────────────
+   DARK MODE OVERRIDES
+   These rules fire when ThemeToggle adds class="dark" to <html>.
+   We explicitly override every Tailwind background/text/border class
+   that uses a "surface" or "ink" color, since Tailwind compiles
+   those classes to static hex values at build time.
+──────────────────────────────────────────────────────────────────── */
+
+/* Backgrounds */
+html.dark .bg-surface        { background-color: #0f172a !important; }
+html.dark .bg-surface-50     { background-color: #020617 !important; }
+html.dark .bg-surface-100    { background-color: #0f172a !important; }
+html.dark .bg-surface-200    { background-color: #1e293b !important; }
+html.dark .bg-surface-300    { background-color: #334155 !important; }
+
+/* Text */
+html.dark .text-ink           { color: #f8fafc !important; }
+html.dark .text-ink-secondary { color: #cbd5e1 !important; }
+html.dark .text-ink-muted     { color: #64748b !important; }
+html.dark .text-ink-faint     { color: #334155 !important; }
+
+/* Borders */
+html.dark .border-surface-200 { border-color: #1e293b !important; }
+html.dark .border-surface-100 { border-color: #0f172a !important; }
+html.dark .border-surface-300 { border-color: #334155 !important; }
+
+/* Placeholder text in inputs */
+html.dark .placeholder-ink-muted::placeholder { color: #64748b !important; }
+
+/* Divider */
+html.dark .divider { border-color: #1e293b !important; }
+
+/* Transition: smooth color change on all elements */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+/* But not transitions on buttons/links (they have their own hover transitions) */
+button, a, input, textarea { transition: unset; }
+
