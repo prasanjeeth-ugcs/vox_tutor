@@ -12,94 +12,150 @@ import { apiPost } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
+/**
+ * AuthForm — Handles both sign-in and sign-up in one component.
+ *
+ * Props:
+ *   mode — Either "sign-in" or "sign-up"
+ *
+ * The sign-in/sign-up flow:
+ *   1. User enters credentials (or clicks Google)
+ *   2. Firebase verifies the credentials
+ *   3. We send the Firebase ID token to our backend to create a session cookie
+ *   4. We save/update the user's profile in our MongoDB database
+ *   5. We update the React auth state so the app knows the user is logged in
+ *   6. We redirect to the dashboard
+ */
 export default function AuthForm({ mode }) {
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // Determines which form variant to show
   const isSignUp = mode === 'sign-up';
 
-  const [name, setName]         = useState('');
-  const [email, setEmail]       = useState('');
+  // Form field values
+  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw]     = useState(false);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
 
-  // Helper function to handle the post-login steps
-  const onSuccess = async (idToken, uid, displayName, userEmail, photoURL) => {
-    // 1. Send the Firebase token to our backend to create a secure session cookie
+  // UI state
+  const [showPassword, setShowPassword] = useState(false); // Toggle password visibility
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
+
+  /**
+   * onAuthSuccess — Called after any successful Firebase sign-in (email or Google).
+   *
+   * Steps:
+   *   1. Send the Firebase ID token to our backend → it creates a session cookie
+   *   2. Save/update the user's profile in MongoDB
+   *   3. Update local React state so the app knows we're logged in
+   *   4. Redirect to the dashboard
+   */
+  async function onAuthSuccess(idToken, uid, displayName, userEmail, photoURL) {
+    // Step 1: Exchange the Firebase token for our backend session cookie
     await apiPost('/auth/session', { idToken });
-    
-    // 2. Save or update the user's details in our MongoDB database
-    await apiPost('/auth/upsert-user', { uid, name: displayName, email: userEmail, photoURL });
-    
-    // 3. Update the local React state so the app knows we're logged in
-    login({ uid, name: displayName, email: userEmail, photoURL });
-    
-    // 4. Redirect the user to the main dashboard
-    navigate('/dashboard');
-  };
 
-  // Handles signing up or signing in with Email & Password
-  const handleEmail = async (e) => {
-    e.preventDefault(); // Prevent the page from refreshing
+    // Step 2: Save or update the user's profile in our database
+    await apiPost('/auth/upsert-user', { uid, name: displayName, email: userEmail, photoURL });
+
+    // Step 3: Tell React that the user is now logged in
+    login({ uid, name: displayName, email: userEmail, photoURL });
+
+    // Step 4: Redirect to the main app
+    navigate('/dashboard');
+  }
+
+  /**
+   * handleEmailSubmit — Handles sign-in or sign-up with email and password.
+   */
+  async function handleEmailSubmit(event) {
+    event.preventDefault(); // Prevent the browser from refreshing the page
     setError('');
     setLoading(true);
-    
+
     try {
       if (isSignUp) {
-        // 1. Create a new user in Firebase Auth
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        
-        // 2. Set their display name in Firebase
-        await updateProfile(cred.user, { displayName: name });
-        
-        // 3. Get the security token and proceed to our backend
-        const token = await cred.user.getIdToken();
-        await onSuccess(token, cred.user.uid, name, email);
+        // ── Sign Up ─────────────────────────────────────────────
+        // Step 1: Create the new user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        // Step 2: Set their display name in Firebase
+        await updateProfile(userCredential.user, { displayName: name });
+
+        // Step 3: Get the ID token and complete the login flow
+        const idToken = await userCredential.user.getIdToken();
+        await onAuthSuccess(idToken, userCredential.user.uid, name, email);
+
       } else {
-        // 1. Verify credentials with Firebase Auth
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        
-        // 2. Get the security token and proceed to our backend
-        const token = await cred.user.getIdToken();
-        await onSuccess(token, cred.user.uid, cred.user.displayName ?? email, email, cred.user.photoURL ?? undefined);
+        // ── Sign In ─────────────────────────────────────────────
+        // Step 1: Verify their credentials with Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        // Step 2: Get the ID token and complete the login flow
+        const idToken = await userCredential.user.getIdToken();
+        await onAuthSuccess(
+          idToken,
+          userCredential.user.uid,
+          userCredential.user.displayName ?? email,
+          email,
+          userCredential.user.photoURL ?? undefined
+        );
       }
-    } catch (err) {
-      // Handle standard Firebase error codes cleanly
-      const msg = err?.code ?? '';
-      if (msg.includes('email-already')) setError('Email already in use. Sign in instead.');
-      else if (msg.includes('wrong-password') || msg.includes('invalid-credential')) setError('Incorrect email or password.');
-      else if (msg.includes('user-not-found')) setError('No account found. Sign up instead.');
-      else if (msg.includes('weak-password')) setError('Password must be at least 6 characters.');
-      else setError('Something went wrong. Please try again.');
+
+    } catch (firebaseError) {
+      // Map Firebase error codes to user-friendly messages
+      const errorCode = firebaseError?.code ?? '';
+
+      if (errorCode.includes('email-already')) {
+        setError('Email already in use. Sign in instead.');
+      } else if (errorCode.includes('wrong-password') || errorCode.includes('invalid-credential')) {
+        setError('Incorrect email or password.');
+      } else if (errorCode.includes('user-not-found')) {
+        setError('No account found. Sign up instead.');
+      } else if (errorCode.includes('weak-password')) {
+        setError('Password must be at least 6 characters.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  // Handles signing in with Google
-  const handleGoogle = async () => {
+  /**
+   * handleGoogleSignIn — Opens the Google OAuth popup and signs the user in.
+   */
+  async function handleGoogleSignIn() {
     setError('');
     setLoading(true);
-    
+
     try {
-      // 1. Open the Google Sign-in popup
-      const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      
-      // 2. Get the security token and proceed to our backend
-      const token = await cred.user.getIdToken();
-      await onSuccess(token, cred.user.uid, cred.user.displayName ?? '', cred.user.email ?? '', cred.user.photoURL ?? undefined);
+      // Step 1: Open the Google sign-in popup
+      const googleProvider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, googleProvider);
+
+      // Step 2: Get the ID token and complete the login flow
+      const idToken = await userCredential.user.getIdToken();
+      await onAuthSuccess(
+        idToken,
+        userCredential.user.uid,
+        userCredential.user.displayName ?? '',
+        userCredential.user.email ?? '',
+        userCredential.user.photoURL ?? undefined
+      );
     } catch {
       setError('Google sign-in failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   return (
     <div className="w-full max-w-sm">
       <div className="card p-8">
+
+        {/* ─── Title ─── */}
         <h1 className="text-2xl font-bold text-ink mb-1">
           {isSignUp ? 'Create your account' : 'Welcome back'}
         </h1>
@@ -107,12 +163,13 @@ export default function AuthForm({ mode }) {
           {isSignUp ? 'Start practicing interviews for free.' : 'Sign in to continue your prep.'}
         </p>
 
-        {/* Google */}
+        {/* ─── Google sign-in button ─── */}
         <button
-          onClick={handleGoogle}
+          onClick={handleGoogleSignIn}
           disabled={loading}
           className="btn-secondary w-full mb-4 gap-3"
         >
+          {/* Google logo SVG (4 coloured paths = the G icon) */}
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -122,25 +179,31 @@ export default function AuthForm({ mode }) {
           Continue with Google
         </button>
 
+        {/* ─── Divider ─── */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-1 divider" />
           <span className="text-xs text-ink-muted">or</span>
           <div className="flex-1 divider" />
         </div>
 
-        <form onSubmit={handleEmail} className="space-y-4">
+        {/* ─── Email & password form ─── */}
+        <form onSubmit={handleEmailSubmit} className="space-y-4">
+
+          {/* Name field — only shown on sign-up */}
           {isSignUp && (
             <div>
               <label className="label">Full name</label>
               <input
                 className="input"
-                placeholder="Sathwik"
+                placeholder="Your name"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 required
               />
             </div>
           )}
+
+          {/* Email field */}
           <div>
             <label className="label">Email</label>
             <input
@@ -152,11 +215,13 @@ export default function AuthForm({ mode }) {
               required
             />
           </div>
+
+          {/* Password field with show/hide toggle */}
           <div>
             <label className="label">Password</label>
             <div className="relative">
               <input
-                type={showPw ? 'text' : 'password'}
+                type={showPassword ? 'text' : 'password'}
                 className="input pr-10"
                 placeholder="••••••••"
                 value={password}
@@ -164,28 +229,36 @@ export default function AuthForm({ mode }) {
                 minLength={6}
                 required
               />
+              {/* Toggle to show or hide the password */}
               <button
                 type="button"
-                onClick={() => setShowPw(v => !v)}
+                onClick={() => setShowPassword(previousValue => !previousValue)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink"
               >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
+          {/* Error message (shown only when an error occurred) */}
           {error && (
             <p className="text-sm text-danger bg-red-50 border border-red-200 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
 
-          <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full mt-2"
+          >
             {loading ? <Loader2 size={16} className="animate-spin" /> : null}
             {isSignUp ? 'Create account' : 'Sign in'}
           </button>
         </form>
 
+        {/* ─── Switch between sign-in and sign-up ─── */}
         <p className="text-center text-sm text-ink-secondary mt-5">
           {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
           <Link
