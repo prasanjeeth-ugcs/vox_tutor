@@ -70,7 +70,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-surface overflow-hidden transition-colors duration-300">
 
       {/* ─── Nav ─── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-white/80 backdrop-blur-lg border-b border-surface-200">
+      <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-lg border-b border-surface-200 transition-colors duration-300" style={{ backgroundColor: 'color-mix(in srgb, var(--color-surface) 85%, transparent)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <span className="font-semibold text-lg tracking-tight text-ink">
             Vox<span className="text-brand-600">Tutor</span>
