@@ -2,26 +2,33 @@ import Interview from '../models/Interview.js';
 import Feedback from '../models/Feedback.js';
 import { GoogleGenAI } from '@google/genai';
 
+// Initialize the Google Gemini SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// POST /api/feedback — Generate feedback via Gemini and save to MongoDB
+/**
+ * POST /api/feedback
+ * Analyzes the interview transcript using Gemini AI and generates a detailed feedback report.
+ */
 export async function generateFeedback(req, res) {
   try {
+    // 1. Extract data from the request body
     const { interviewId, userId, domainLabel, difficulty, transcript } = req.body;
 
+    // 2. Format the transcript array into a readable text format for the AI
     const transcriptText = transcript
-      .map((t) =>
-        `${t.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${t.content}`
+      .map((turn) =>
+        `${turn.role === 'interviewer' ? 'Interviewer' : 'Candidate'}: ${turn.content}`
       )
       .join('\n\n');
 
+    // 3. Build the prompt instructions telling the AI how to grade the candidate
     const prompt = `You are a senior ${domainLabel} hiring manager analyzing a mock interview.
 Difficulty level: ${difficulty}
 
 Interview Transcript:
 ${transcriptText}
 
-Analyze the candidate's performance and return ONLY valid JSON (no markdown, no backticks):
+Analyze the candidate's performance and return ONLY valid JSON matching this structure:
 {
   "overallScore": <integer 0-100>,
   "verdict": "<Strong Hire | Hire | Maybe | No Hire>",
@@ -57,55 +64,66 @@ Analyze the candidate's performance and return ONLY valid JSON (no markdown, no 
   "nextSteps": ["<actionable step 1>", "<actionable step 2>", "<actionable step 3>"]
 }`;
 
+    // 4. Call Gemini AI, enforcing a strict JSON response
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
-      config: { responseMimeType: 'application/json' },
+      config: { 
+        responseMimeType: 'application/json' 
+      },
     });
+
+    // 5. Parse the returned JSON text into a JavaScript object
     const text = (result.text ?? '').trim();
+    const analysis = JSON.parse(text);
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('Invalid JSON from Gemini');
-    const analysis = JSON.parse(jsonMatch[0]);
-
-    // Save feedback to MongoDB
+    // 6. Save the new feedback report to the database
     const feedback = await Feedback.create({
       interviewId,
       userId,
       ...analysis,
     });
 
-    // Update interview status to completed
+    // 7. Mark the original interview as 'completed'
     await Interview.findByIdAndUpdate(interviewId, {
       status: 'completed',
       completedAt: new Date().toISOString(),
     });
 
-    // Format response for frontend
-    const fbObj = feedback.toObject();
-    fbObj.id = fbObj._id.toString();
-    fbObj.interviewId = fbObj.interviewId.toString();
+    // 8. Format the response for the frontend (convert MongoDB ObjectIds to strings)
+    const formattedFeedback = feedback.toObject();
+    formattedFeedback.id = formattedFeedback._id.toString();
+    formattedFeedback.interviewId = formattedFeedback.interviewId.toString();
 
-    return res.json({ feedback: fbObj });
+    // 9. Send the feedback report back to the frontend
+    return res.json({ feedback: formattedFeedback });
+    
   } catch (err) {
     console.error('Feedback generation error:', err);
     return res.status(500).json({ error: 'Failed to generate feedback' });
   }
 }
 
-// GET /api/feedback/:interviewId — Get feedback for an interview
+/**
+ * GET /api/feedback/:interviewId
+ * Retrieves an existing feedback report for a specific interview.
+ */
 export async function getFeedback(req, res) {
   try {
+    // 1. Find the feedback document in the database
     const feedback = await Feedback.findOne({ interviewId: req.params.interviewId }).lean();
 
     if (!feedback) {
       return res.json({ feedback: null });
     }
 
+    // 2. Format the response for the frontend
     feedback.id = feedback._id.toString();
     feedback.interviewId = feedback.interviewId.toString();
 
+    // 3. Send the feedback report back
     return res.json({ feedback });
+    
   } catch (err) {
     console.error('Get feedback error:', err);
     return res.status(500).json({ error: 'Failed to fetch feedback' });

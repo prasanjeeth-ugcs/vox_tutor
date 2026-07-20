@@ -24,29 +24,48 @@ export default function AuthForm({ mode }) {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
 
+  // Helper function to handle the post-login steps
   const onSuccess = async (idToken, uid, displayName, userEmail, photoURL) => {
+    // 1. Send the Firebase token to our backend to create a secure session cookie
     await apiPost('/auth/session', { idToken });
+    
+    // 2. Save or update the user's details in our MongoDB database
     await apiPost('/auth/upsert-user', { uid, name: displayName, email: userEmail, photoURL });
+    
+    // 3. Update the local React state so the app knows we're logged in
     login({ uid, name: displayName, email: userEmail, photoURL });
+    
+    // 4. Redirect the user to the main dashboard
     navigate('/dashboard');
   };
 
+  // Handles signing up or signing in with Email & Password
   const handleEmail = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent the page from refreshing
     setError('');
     setLoading(true);
+    
     try {
       if (isSignUp) {
+        // 1. Create a new user in Firebase Auth
         const cred = await createUserWithEmailAndPassword(auth, email, password);
+        
+        // 2. Set their display name in Firebase
         await updateProfile(cred.user, { displayName: name });
+        
+        // 3. Get the security token and proceed to our backend
         const token = await cred.user.getIdToken();
         await onSuccess(token, cred.user.uid, name, email);
       } else {
+        // 1. Verify credentials with Firebase Auth
         const cred = await signInWithEmailAndPassword(auth, email, password);
+        
+        // 2. Get the security token and proceed to our backend
         const token = await cred.user.getIdToken();
         await onSuccess(token, cred.user.uid, cred.user.displayName ?? email, email, cred.user.photoURL ?? undefined);
       }
     } catch (err) {
+      // Handle standard Firebase error codes cleanly
       const msg = err?.code ?? '';
       if (msg.includes('email-already')) setError('Email already in use. Sign in instead.');
       else if (msg.includes('wrong-password') || msg.includes('invalid-credential')) setError('Incorrect email or password.');
@@ -58,12 +77,17 @@ export default function AuthForm({ mode }) {
     }
   };
 
+  // Handles signing in with Google
   const handleGoogle = async () => {
     setError('');
     setLoading(true);
+    
     try {
+      // 1. Open the Google Sign-in popup
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
+      
+      // 2. Get the security token and proceed to our backend
       const token = await cred.user.getIdToken();
       await onSuccess(token, cred.user.uid, cred.user.displayName ?? '', cred.user.email ?? '', cred.user.photoURL ?? undefined);
     } catch {
