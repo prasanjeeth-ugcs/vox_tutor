@@ -1,6 +1,6 @@
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Mic, BarChart2, Clock, Zap, ArrowRight, Star, Shield, Sparkles, Brain, MessageSquare, Users, CheckCircle, TrendingUp } from 'lucide-react';
+import { Mic, BarChart2, Clock, Zap, ArrowRight, Shield, Sparkles, Brain, MessageSquare, TrendingUp } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 /* ───────── Animated Counter (triggers on scroll-into-view) ───────── */
@@ -339,26 +339,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Testimonial / Quote ─── */}
-      <section className="py-20 px-6 bg-surface-50 border-y border-surface-200">
-        <div className="max-w-3xl mx-auto text-center">
-          <Reveal>
-            <Star size={20} className="text-amber-400 mx-auto mb-4" />
-            <blockquote className="text-xl md:text-2xl font-medium text-ink leading-relaxed mb-6 italic">
-              "I practiced three mock interviews on VoxTutor and felt 10× more confident walking into my actual Google interview. The AI feedback was shockingly accurate."
-            </blockquote>
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-sm">
-                SK
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-ink">Sanya K.</p>
-                <p className="text-xs text-ink-muted">Software Engineer @ Google</p>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
 
       {/* ─── CTA ─── */}
       <section className="relative py-24 px-6 bg-gradient-to-br from-brand-600 via-brand-700 to-purple-700 overflow-hidden">
