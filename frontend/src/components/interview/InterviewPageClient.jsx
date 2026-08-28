@@ -81,7 +81,8 @@ export default function InterviewPageClient({
 
     // Persist the new entry to our backend (non-fatal if it fails)
     try {
-      await fetch('/api/transcript', {
+      const apiBase = import.meta.env.VITE_API_URL || '/api';
+      await fetch(`${apiBase}/transcript`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -115,7 +116,8 @@ export default function InterviewPageClient({
 
     // Send all the interview data to our backend to generate AI feedback
     try {
-      await fetch('/api/feedback', {
+      const apiBase = import.meta.env.VITE_API_URL || '/api';
+      await fetch(`${apiBase}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

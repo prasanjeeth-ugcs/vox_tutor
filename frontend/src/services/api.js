@@ -7,8 +7,8 @@
  *   - Gives us one place to change the API base URL if needed
  */
 
-// All API calls go to /api/... (e.g. /api/interviews, /api/auth/me)
-const API_BASE = '/api';
+// All API calls go to /api/... locally (via Vite proxy) or to the full backend URL in production
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
  * apiFetch — Low-level fetch wrapper.
