@@ -1,11 +1,9 @@
-import { GoogleGenAI } from '@google/genai';
-
-// Initialize the Google Gemini SDK
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 /**
  * POST /api/vapi/generate
  * Generates interview questions using Google's Gemini AI.
+ * 
+ * Uses direct REST API calls instead of the SDK to support
+ * both AIza... and AQ. (service-account-bound) API key formats.
  */
 export async function generateQuestions(req, res) {
   try {
@@ -32,18 +30,34 @@ Requirements:
 - Do NOT number the questions
 - Return a JSON array of strings representing the questions.`;
 
-    // 4. Call the Gemini API, enforcing a JSON response format
-    const result = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { 
-        // This tells Gemini to strictly return valid JSON
-        responseMimeType: 'application/json' 
+    // 4. Call the Gemini REST API directly (bypasses SDK auth issues with AQ. keys)
+    const apiKey = process.env.GEMINI_API_KEY;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
       },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+        },
+      }),
     });
 
-    // 5. Parse the returned JSON text into a JavaScript array
-    const text = (result.text ?? '').trim();
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Gemini API error:', response.status, errorBody);
+      throw new Error(`Gemini API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // 5. Extract the generated text from the API response
+    const text = (data.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
     const questions = JSON.parse(text);
 
     // 6. Send the generated questions back to the frontend
