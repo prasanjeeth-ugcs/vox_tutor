@@ -34,7 +34,7 @@ export default function NewInterviewButton({ userId }) {
       const numberOfQuestions = durationConfig?.questions ?? 5;
 
       // Step 2: Ask our backend (which uses Gemini AI) to generate interview questions
-      const generatedQuestions = await apiPost('/vapi/generate', {
+      const generateRes = await apiPost('/vapi/generate', {
         domain:       selectedDomain.id,
         domainLabel:  selectedDomain.label,
         difficulty,
@@ -42,8 +42,13 @@ export default function NewInterviewButton({ userId }) {
         numQuestions: numberOfQuestions,
       });
 
+      if (!generateRes.ok) {
+        throw new Error('Failed to generate questions. Please try again.');
+      }
+      const generatedQuestions = await generateRes.json();
+
       // Step 3: Save the new interview to the database
-      const createdInterview = await apiPost('/interviews', {
+      const interviewRes = await apiPost('/interviews', {
         userId,
         domain:      selectedDomain.id,
         domainLabel: selectedDomain.label,
@@ -52,6 +57,11 @@ export default function NewInterviewButton({ userId }) {
         duration,
         questions:   generatedQuestions.questions,
       });
+
+      if (!interviewRes.ok) {
+        throw new Error('Failed to create interview. Please try again.');
+      }
+      const createdInterview = await interviewRes.json();
 
       // Step 4: Close the modal and navigate to the interview room
       closeModal();
